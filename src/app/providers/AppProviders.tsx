@@ -23,7 +23,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <NavigationContainer linking={navigationLinking} theme={navigationTheme}>
+        <NavigationContainer linking={navigationLinking as any} theme={navigationTheme}>
           {children}
         </NavigationContainer>
       </QueryClientProvider>

@@ -70,7 +70,7 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'caseflow-mobile-session',
-      storage,
+      storage: storage as any,
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
