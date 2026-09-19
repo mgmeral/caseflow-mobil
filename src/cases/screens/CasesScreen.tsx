@@ -1,10 +1,20 @@
-import { useMemo } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Briefcase, ChevronRight } from 'lucide-react-native';
+import { useMemo } from 'react';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useCases } from '../hooks/useCases';
 import { CenteredState } from '../../shared/components/CenteredState';
+import { EmptyState } from '../../shared/components/EmptyState';
+import { ListSkeleton } from '../../shared/components/ListSkeleton';
+import { PriorityBadge } from '../../shared/components/PriorityBadge';
 import { Screen } from '../../shared/components/Screen';
+import { SlaBadge } from '../../shared/components/SlaBadge';
+import { StatusBadge } from '../../shared/components/StatusBadge';
 import { colors } from '../../shared/theme/colors';
+import { radii } from '../../shared/theme/radii';
+import { shadows } from '../../shared/theme/shadows';
+import { spacing } from '../../shared/theme/spacing';
+import { typography } from '../../shared/theme/typography';
 
 export function CasesScreen() {
   const navigation = useNavigation<any>();
@@ -16,7 +26,11 @@ export function CasesScreen() {
   );
 
   if (query.isLoading) {
-    return <CenteredState title="Loading cases" />;
+    return (
+      <Screen>
+        <ListSkeleton />
+      </Screen>
+    );
   }
 
   if (query.isError) {
@@ -29,27 +43,38 @@ export function CasesScreen() {
         data={cases}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={() => query.refetch()} tintColor={colors.primary} colors={[colors.primary]} />
+        }
         onEndReached={() => {
           if (query.hasNextPage && !query.isFetchingNextPage) {
             query.fetchNextPage();
           }
         }}
+        ListEmptyComponent={<EmptyState icon={Briefcase} title="No open cases" description="Cases assigned to you will show up here." />}
         renderItem={({ item }) => (
           <Pressable
-            style={styles.card}
+            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
             onPress={() => navigation.navigate('CaseDetail', { caseId: String(item.id) })}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.caseTitle}>{item.ticketNo}</Text>
-              <Text style={styles.badge}>{item.priority}</Text>
+              <Text style={styles.caseTitle} numberOfLines={1}>
+                {item.ticketNo}
+              </Text>
+              <ChevronRight size={18} color={colors.mutedLight} />
             </View>
-            <Text style={styles.subject}>{item.subject}</Text>
+            <Text style={styles.subject} numberOfLines={2}>
+              {item.subject}
+            </Text>
             <Text style={styles.meta}>{item.customerName ?? 'Unknown customer'}</Text>
-            <Text style={styles.meta}>Status: {item.status}</Text>
-            <Text style={styles.meta}>SLA: {item.slaState ?? 'N/A'}</Text>
+            <View style={styles.badgeRow}>
+              <PriorityBadge priority={item.priority} />
+              <StatusBadge status={item.status} />
+              <SlaBadge slaState={item.slaState} />
+            </View>
           </Pressable>
         )}
-        ListFooterComponent={query.isFetchingNextPage ? <ActivityIndicator color={colors.primary} /> : null}
+        ListFooterComponent={query.isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={styles.footerSpinner} /> : null}
       />
     </Screen>
   );
@@ -57,16 +82,21 @@ export function CasesScreen() {
 
 const styles = StyleSheet.create({
   listContent: {
-    gap: 12,
-    paddingBottom: 24,
+    gap: spacing.md,
+    paddingBottom: spacing.xxl,
+    flexGrow: 1,
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 16,
-    gap: 6,
+    padding: spacing.lg,
+    gap: spacing.xxs,
+    ...shadows.soft,
+  },
+  cardPressed: {
+    backgroundColor: colors.surfaceMuted,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -74,22 +104,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   caseTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '700',
+    ...typography.bodyStrong,
+    fontSize: 15,
   },
   subject: {
-    color: colors.text,
-    fontSize: 15,
+    ...typography.body,
     fontWeight: '600',
   },
   meta: {
-    color: colors.muted,
-    fontSize: 13,
+    ...typography.caption,
   },
-  badge: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: '700',
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  footerSpinner: {
+    marginVertical: spacing.lg,
   },
 });

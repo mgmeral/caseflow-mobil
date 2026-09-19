@@ -1,9 +1,15 @@
+import { Shield } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { login } from '../../core/auth/session';
 import { getDisplayMessage } from '../../core/api/http';
+import { Button } from '../../shared/components/Button';
 import { colors } from '../../shared/theme/colors';
+import { radii } from '../../shared/theme/radii';
+import { shadows } from '../../shared/theme/shadows';
+import { spacing } from '../../shared/theme/spacing';
+import { typography } from '../../shared/theme/typography';
 
 export function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -30,36 +36,48 @@ export function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>CaseFlow Mobile</Text>
-          <Text style={styles.subtitle}>Sign in with your existing CaseFlow account.</Text>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.container}>
+          <View style={styles.brandMark}>
+            <Shield size={30} color={colors.onPrimary} strokeWidth={2} />
+          </View>
+          <Text style={styles.brandTitle}>CaseFlow Mobile</Text>
+          <Text style={styles.brandSubtitle}>Sign in with your existing CaseFlow account.</Text>
 
-          <TextInput
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder="Username"
-            style={styles.input}
-            testID="username-input"
-          />
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            secureTextEntry
-            style={styles.input}
-            testID="password-input"
-          />
+          <View style={styles.card}>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Username</Text>
+              <TextInput
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="jane.doe"
+                placeholderTextColor={colors.mutedLight}
+                style={styles.input}
+                testID="username-input"
+              />
+            </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                placeholderTextColor={colors.mutedLight}
+                secureTextEntry
+                style={styles.input}
+                testID="password-input"
+              />
+            </View>
 
-          <Pressable style={styles.button} onPress={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Sign In</Text>}
-          </Pressable>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <Button label="Sign In" onPress={handleSubmit} loading={isSubmitting} style={styles.submit} />
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -69,52 +87,64 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  flex: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.xl,
+  },
+  brandMark: {
+    width: 56,
+    height: 56,
+    borderRadius: radii.lg,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  brandTitle: {
+    ...typography.display,
+    fontSize: 26,
+  },
+  brandSubtitle: {
+    ...typography.subtitle,
+    marginTop: spacing.xxs,
+    marginBottom: spacing.xxl,
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: 20,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: 12,
+    gap: spacing.lg,
+    ...shadows.card,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.text,
+  field: {
+    gap: spacing.xs,
   },
-  subtitle: {
-    fontSize: 15,
-    color: colors.muted,
-    marginBottom: 8,
+  fieldLabel: {
+    ...typography.label,
   },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     backgroundColor: colors.surfaceMuted,
+    fontSize: 15,
+    color: colors.text,
   },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  buttonText: {
-    color: colors.onPrimary,
-    fontSize: 16,
-    fontWeight: '600',
+  submit: {
+    marginTop: spacing.xs,
   },
   error: {
     color: colors.danger,
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

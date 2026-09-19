@@ -1,4 +1,6 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AlertCircle } from 'lucide-react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { Button } from './Button';
 import { colors } from '../theme/colors';
 
 interface Props {
@@ -8,14 +10,20 @@ interface Props {
 }
 
 export function CenteredState({ title, actionLabel, onAction }: Props) {
+  const isError = Boolean(actionLabel);
+
   return (
     <View style={styles.container}>
-      {!actionLabel ? <ActivityIndicator color={colors.primary} style={{ marginBottom: 12 }} /> : null}
+      {isError ? (
+        <View style={styles.iconWrap}>
+          <AlertCircle size={24} color={colors.errorText} strokeWidth={1.75} />
+        </View>
+      ) : (
+        <ActivityIndicator color={colors.primary} size="large" style={styles.spinner} />
+      )}
       <Text style={styles.title}>{title}</Text>
       {actionLabel && onAction ? (
-        <Pressable style={styles.button} onPress={onAction}>
-          <Text style={styles.buttonText}>{actionLabel}</Text>
-        </Pressable>
+        <Button label={actionLabel} onPress={onAction} variant="secondary" size="sm" style={styles.action} />
       ) : null}
     </View>
   );
@@ -29,20 +37,25 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: colors.background,
   },
+  spinner: {
+    marginBottom: 14,
+  },
+  iconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.errorMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
   title: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '500',
     textAlign: 'center',
   },
-  button: {
+  action: {
     marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-  },
-  buttonText: {
-    color: colors.onPrimary,
-    fontWeight: '600',
   },
 });

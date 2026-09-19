@@ -1,9 +1,17 @@
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Bell, CheckCheck } from 'lucide-react-native';
 import { useMemo } from 'react';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '../hooks/useNotifications';
+import { Button } from '../../shared/components/Button';
 import { CenteredState } from '../../shared/components/CenteredState';
+import { EmptyState } from '../../shared/components/EmptyState';
+import { ListSkeleton } from '../../shared/components/ListSkeleton';
 import { Screen } from '../../shared/components/Screen';
 import { colors } from '../../shared/theme/colors';
+import { radii } from '../../shared/theme/radii';
+import { shadows } from '../../shared/theme/shadows';
+import { spacing } from '../../shared/theme/spacing';
+import { typography } from '../../shared/theme/typography';
 
 export function NotificationsScreen() {
   const query = useNotifications();
@@ -12,38 +20,60 @@ export function NotificationsScreen() {
   const items = useMemo(() => query.data?.pages.flatMap((page) => page.items) ?? [], [query.data?.pages]);
 
   if (query.isLoading) {
-    return <CenteredState title="Loading notifications" />;
+    return (
+      <Screen>
+        <ListSkeleton />
+      </Screen>
+    );
   }
 
   if (query.isError) {
     return <CenteredState title="Could not load notifications" actionLabel="Retry" onAction={() => query.refetch()} />;
   }
 
+  const hasUnread = items.some((item) => !item.isRead);
+
   return (
     <Screen>
-      <Pressable style={styles.actionButton} onPress={() => markAll.mutate()}>
-        <Text style={styles.actionLabel}>Mark all read</Text>
-      </Pressable>
+      {hasUnread ? (
+        <Button
+          label="Mark all read"
+          onPress={() => markAll.mutate()}
+          variant="secondary"
+          icon={<CheckCheck size={16} color={colors.text} />}
+          style={styles.actionButton}
+        />
+      ) : null}
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={() => query.refetch()} tintColor={colors.primary} colors={[colors.primary]} />
+        }
         onEndReached={() => {
           if (query.hasNextPage && !query.isFetchingNextPage) {
             query.fetchNextPage();
           }
         }}
+        ListEmptyComponent={<EmptyState icon={Bell} title="No notifications yet" description="You'll see ticket and mention updates here." />}
         renderItem={({ item }) => (
           <Pressable style={styles.card} onPress={() => !item.isRead && markOne.mutate(item.id)}>
-            <View style={styles.row}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.badge}>{item.isRead ? 'Read' : 'Unread'}</Text>
+            {!item.isRead ? <View style={styles.unreadDot} /> : null}
+            <View style={styles.cardText}>
+              <Text style={[styles.title, !item.isRead && styles.titleUnread]} numberOfLines={2}>
+                {item.title}
+              </Text>
+              <Text style={styles.message} numberOfLines={3}>
+                {item.message}
+              </Text>
+              <Text style={styles.meta}>
+                {item.ticketNo ?? 'General'} · {item.createdAt}
+              </Text>
             </View>
-            <Text style={styles.message}>{item.message}</Text>
-            <Text style={styles.meta}>{item.ticketNo ?? 'General'} · {item.createdAt}</Text>
           </Pressable>
         )}
-        ListFooterComponent={query.isFetchingNextPage ? <ActivityIndicator color={colors.primary} /> : null}
+        ListFooterComponent={query.isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={styles.footerSpinner} /> : null}
       />
     </Screen>
   );
@@ -51,50 +81,52 @@ export function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   actionButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  actionLabel: {
-    color: colors.onPrimary,
-    fontWeight: '600',
+    marginBottom: spacing.lg,
+    alignSelf: 'flex-start',
   },
   listContent: {
-    gap: 12,
-    paddingBottom: 24,
+    gap: spacing.md,
+    paddingBottom: spacing.xxl,
+    flexGrow: 1,
   },
   card: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 16,
+    padding: spacing.lg,
+    ...shadows.soft,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    marginTop: 6,
+  },
+  cardText: {
+    flex: 1,
+    gap: spacing.xxs,
   },
   title: {
-    color: colors.text,
+    ...typography.body,
     fontWeight: '600',
-    flex: 1,
-    marginRight: 8,
   },
-  badge: {
-    color: colors.primary,
-    fontSize: 12,
+  titleUnread: {
+    color: colors.text,
     fontWeight: '700',
   },
   message: {
-    color: colors.text,
-    marginTop: 8,
+    ...typography.body,
+    color: colors.muted,
   },
   meta: {
-    color: colors.muted,
-    marginTop: 8,
-    fontSize: 12,
+    ...typography.caption,
+    marginTop: spacing.xxs,
+  },
+  footerSpinner: {
+    marginVertical: spacing.lg,
   },
 });
