@@ -1,21 +1,23 @@
-import { AlertTriangle, ChevronRight, MailOpen, Users } from 'lucide-react-native';
+import { AlertTriangle, MailOpen, Users } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useInboxQueue } from '../hooks/useInboxQueue';
+import { InboxQueueItem } from '../components/InboxQueueItem';
+import { useSessionStore } from '../../core/auth/sessionStore';
 import { CenteredState } from '../../shared/components/CenteredState';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { ListSkeleton } from '../../shared/components/ListSkeleton';
 import { MetricCard } from '../../shared/components/MetricCard';
 import { Screen } from '../../shared/components/Screen';
 import { colors } from '../../shared/theme/colors';
-import { radii } from '../../shared/theme/radii';
-import { shadows } from '../../shared/theme/shadows';
 import { spacing } from '../../shared/theme/spacing';
-import { typography } from '../../shared/theme/typography';
+import { hasPermission } from '../../shared/utils/permissions';
 
 export function InboxScreen() {
   const { listQuery, statsQuery } = useInboxQueue();
   const items = useMemo(() => listQuery.data?.pages.flatMap((page) => page.items) ?? [], [listQuery.data?.pages]);
+  const user = useSessionStore((state) => state.user);
+  const canClaim = hasPermission(user?.permissionCodes ?? [], 'TICKET_ASSIGN');
 
   if (listQuery.isLoading) {
     return (
@@ -62,20 +64,7 @@ export function InboxScreen() {
           }
         }}
         ListEmptyComponent={<EmptyState icon={Users} title="Queue is empty" description="Unassigned tickets will appear here." />}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.cardText}>
-              <Text style={styles.title} numberOfLines={1}>
-                {item.ticketNo}
-              </Text>
-              <Text style={styles.subject} numberOfLines={2}>
-                {item.subject}
-              </Text>
-              <Text style={styles.meta}>{item.customerName}</Text>
-            </View>
-            <ChevronRight size={18} color={colors.mutedLight} />
-          </View>
-        )}
+        renderItem={({ item }) => <InboxQueueItem item={item} currentUserId={user?.id} canClaim={canClaim} />}
         ListFooterComponent={listQuery.isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={styles.footerSpinner} /> : null}
       />
     </Screen>
@@ -92,31 +81,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingBottom: spacing.xxl,
     flexGrow: 1,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    ...shadows.soft,
-  },
-  cardText: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    ...typography.bodyStrong,
-    fontSize: 15,
-  },
-  subject: {
-    ...typography.body,
-  },
-  meta: {
-    ...typography.caption,
   },
   footerSpinner: {
     marginVertical: spacing.lg,

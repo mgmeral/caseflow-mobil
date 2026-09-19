@@ -1,8 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
 import { Briefcase, ChevronRight } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useCases } from '../hooks/useCases';
+import { useSessionStore } from '../../core/auth/sessionStore';
 import { CenteredState } from '../../shared/components/CenteredState';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { ListSkeleton } from '../../shared/components/ListSkeleton';
@@ -16,18 +17,40 @@ import { shadows } from '../../shared/theme/shadows';
 import { spacing } from '../../shared/theme/spacing';
 import { typography } from '../../shared/theme/typography';
 
+type CasesFilter = 'all' | 'mine';
+
 export function CasesScreen() {
   const navigation = useNavigation<any>();
-  const query = useCases({ openOnly: true });
+  const userId = useSessionStore((state) => state.user?.id);
+  const [filter, setFilter] = useState<CasesFilter>('all');
+  const query = useCases({ openOnly: true, assignedUserId: filter === 'mine' ? userId : undefined });
 
   const cases = useMemo(
     () => query.data?.pages.flatMap((page) => page.items) ?? [],
     [query.data?.pages],
   );
 
+  const filterTabs = (
+    <View style={styles.filterRow}>
+      <Pressable
+        style={[styles.filterTab, filter === 'all' && styles.filterTabActive]}
+        onPress={() => setFilter('all')}
+      >
+        <Text style={[styles.filterLabel, filter === 'all' && styles.filterLabelActive]}>All Open</Text>
+      </Pressable>
+      <Pressable
+        style={[styles.filterTab, filter === 'mine' && styles.filterTabActive]}
+        onPress={() => setFilter('mine')}
+      >
+        <Text style={[styles.filterLabel, filter === 'mine' && styles.filterLabelActive]}>Assigned to Me</Text>
+      </Pressable>
+    </View>
+  );
+
   if (query.isLoading) {
     return (
       <Screen>
+        {filterTabs}
         <ListSkeleton />
       </Screen>
     );
@@ -39,6 +62,7 @@ export function CasesScreen() {
 
   return (
     <Screen>
+      {filterTabs}
       <FlatList
         data={cases}
         keyExtractor={(item) => String(item.id)}
@@ -51,7 +75,13 @@ export function CasesScreen() {
             query.fetchNextPage();
           }
         }}
-        ListEmptyComponent={<EmptyState icon={Briefcase} title="No open cases" description="Cases assigned to you will show up here." />}
+        ListEmptyComponent={
+          <EmptyState
+            icon={Briefcase}
+            title={filter === 'mine' ? 'No cases assigned to you' : 'No open cases'}
+            description={filter === 'mine' ? 'Tickets assigned to you will show up here.' : 'Cases assigned to you will show up here.'}
+          />
+        }
         renderItem={({ item }) => (
           <Pressable
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -81,6 +111,31 @@ export function CasesScreen() {
 }
 
 const styles = StyleSheet.create({
+  filterRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.md,
+    padding: spacing.xxs,
+    marginBottom: spacing.md,
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+  },
+  filterTabActive: {
+    backgroundColor: colors.surface,
+    ...shadows.soft,
+  },
+  filterLabel: {
+    ...typography.caption,
+    fontWeight: '600',
+  },
+  filterLabelActive: {
+    color: colors.primary,
+  },
   listContent: {
     gap: spacing.md,
     paddingBottom: spacing.xxl,

@@ -8,6 +8,7 @@ import { CasesScreen } from '../../cases/screens/CasesScreen';
 import { CaseDetailScreen } from '../../cases/screens/CaseDetailScreen';
 import { InboxScreen } from '../../inbox/screens/InboxScreen';
 import { CustomersScreen } from '../../customers/screens/CustomersScreen';
+import { CustomerDetailScreen } from '../../customers/screens/CustomerDetailScreen';
 import { NotificationsScreen } from '../../notifications/screens/NotificationsScreen';
 import { ProfileScreen } from '../../settings/screens/ProfileScreen';
 import { useSessionStore } from '../../core/auth/sessionStore';
@@ -17,6 +18,7 @@ import { colors } from '../../shared/theme/colors';
 const RootStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const CasesStack = createNativeStackNavigator();
+const CustomersStack = createNativeStackNavigator();
 
 const stackHeaderOptions = {
   headerStyle: { backgroundColor: colors.surface },
@@ -34,11 +36,20 @@ function CasesNavigator() {
   );
 }
 
+function CustomersNavigator() {
+  return (
+    <CustomersStack.Navigator screenOptions={stackHeaderOptions}>
+      <CustomersStack.Screen name="Customers" component={CustomersScreen} options={{ title: 'Customers' }} />
+      <CustomersStack.Screen name="CustomerDetail" component={CustomerDetailScreen} options={{ title: 'Customer' }} />
+    </CustomersStack.Navigator>
+  );
+}
+
 const TAB_ICONS: Record<string, LucideIcon> = {
   Home: Home,
   CasesStack: Ticket,
   Inbox: InboxIcon,
-  Customers: Users,
+  CustomersStack: Users,
   Notifications: Bell,
   Profile: User,
 };
@@ -67,7 +78,7 @@ function AppTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="CasesStack" component={CasesNavigator} options={{ title: 'Cases' }} />
       {canViewInbox ? <Tab.Screen name="Inbox" component={InboxScreen} /> : null}
-      <Tab.Screen name="Customers" component={CustomersScreen} />
+      <Tab.Screen name="CustomersStack" component={CustomersNavigator} options={{ title: 'Customers' }} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

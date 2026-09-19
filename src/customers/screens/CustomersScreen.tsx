@@ -1,6 +1,7 @@
-import { Users } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { ChevronRight, Users } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useCustomers } from '../hooks/useCustomers';
 import { Avatar } from '../../shared/components/Avatar';
 import { Badge } from '../../shared/components/Badge';
@@ -15,6 +16,7 @@ import { spacing } from '../../shared/theme/spacing';
 import { typography } from '../../shared/theme/typography';
 
 export function CustomersScreen() {
+  const navigation = useNavigation<any>();
   const query = useCustomers();
   const customers = useMemo(() => query.data?.pages.flatMap((page) => page.items) ?? [], [query.data?.pages]);
 
@@ -46,7 +48,10 @@ export function CustomersScreen() {
         }}
         ListEmptyComponent={<EmptyState icon={Users} title="No customers found" />}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Pressable
+            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            onPress={() => navigation.navigate('CustomerDetail', { customerId: String(item.id) })}
+          >
             <Avatar name={item.name} size={40} />
             <View style={styles.info}>
               <Text style={styles.name} numberOfLines={1}>
@@ -55,7 +60,8 @@ export function CustomersScreen() {
               <Text style={styles.meta}>{item.code}</Text>
             </View>
             <Badge label={item.isActive ? 'Active' : 'Inactive'} variant={item.isActive ? 'success' : 'default'} />
-          </View>
+            <ChevronRight size={18} color={colors.mutedLight} />
+          </Pressable>
         )}
         ListFooterComponent={query.isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={styles.footerSpinner} /> : null}
       />
@@ -79,6 +85,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.lg,
     ...shadows.soft,
+  },
+  cardPressed: {
+    backgroundColor: colors.surfaceMuted,
   },
   info: {
     flex: 1,

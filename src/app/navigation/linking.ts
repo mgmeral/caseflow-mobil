@@ -12,7 +12,12 @@ export const navigationLinking = {
             },
           },
           Inbox: 'inbox',
-          Customers: 'customers',
+          CustomersStack: {
+            screens: {
+              Customers: 'customers',
+              CustomerDetail: 'customer/:customerId',
+            },
+          },
           Notifications: 'notifications',
           Profile: 'profile',
         },
