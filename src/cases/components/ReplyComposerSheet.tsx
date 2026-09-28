@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { X } from 'lucide-react-native';
+import { resolveSchedulePreset, SCHEDULE_PRESETS, type SchedulePreset } from '../../scheduledEmails/utils/scheduledEmails';
 import { Button } from '../../shared/components/Button';
+import { ChipGroup } from '../../shared/components/ChipGroup';
 import { colors } from '../../shared/theme/colors';
 import { radii } from '../../shared/theme/radii';
 import { spacing } from '../../shared/theme/spacing';
@@ -14,21 +16,35 @@ interface Props {
   isSending: boolean;
   errorMessage?: string | null;
   onSend: (subject: string, body: string) => void;
+  /** Shown only when set (SCHEDULED_EMAIL_MANAGE). */
+  onSchedule?: (subject: string, body: string, sendNotBefore: Date) => void;
   onClose: () => void;
 }
 
-export function ReplyComposerSheet({ visible, defaultSubject, toAddress, isSending, errorMessage, onSend, onClose }: Props) {
+export function ReplyComposerSheet({ visible, defaultSubject, toAddress, isSending, errorMessage, onSend, onSchedule, onClose }: Props) {
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState('');
+  const [schedulePreset, setSchedulePreset] = useState<SchedulePreset | null>(null);
 
   useEffect(() => {
     if (visible) {
       setSubject(defaultSubject);
       setBody('');
+      setSchedulePreset(null);
     }
   }, [visible, defaultSubject]);
 
   const canSend = subject.trim().length > 0 && body.trim().length > 0 && !isSending;
+  const isScheduled = onSchedule != null && schedulePreset != null;
+
+  const handleSubmit = () => {
+    if (onSchedule && schedulePreset) {
+      // Resolved at submit time so the moment is always in the future.
+      onSchedule(subject.trim(), body.trim(), resolveSchedulePreset(schedulePreset));
+    } else {
+      onSend(subject.trim(), body.trim());
+    }
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -58,12 +74,28 @@ export function ReplyComposerSheet({ visible, defaultSubject, toAddress, isSendi
               textAlignVertical="top"
             />
 
+            {onSchedule ? (
+              <View style={styles.schedule}>
+                <ChipGroup
+                  label="Send later (optional)"
+                  options={SCHEDULE_PRESETS}
+                  selected={schedulePreset ? [schedulePreset] : []}
+                  onToggle={(value) => setSchedulePreset((current) => (current === value ? null : value))}
+                />
+                {schedulePreset ? (
+                  <Text style={styles.scheduleHint}>
+                    Goes out {resolveSchedulePreset(schedulePreset).toLocaleString()}. You can cancel it until then.
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
             {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
           </ScrollView>
 
           <View style={styles.footer}>
             <Button label="Cancel" variant="secondary" onPress={onClose} style={styles.footerButton} />
-            <Button label="Send" onPress={() => onSend(subject.trim(), body.trim())} disabled={!canSend} loading={isSending} style={styles.footerButton} />
+            <Button label={isScheduled ? 'Schedule' : 'Send'} onPress={handleSubmit} disabled={!canSend} loading={isSending} style={styles.footerButton} />
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -127,6 +159,13 @@ const styles = StyleSheet.create({
     minHeight: 160,
     color: colors.text,
     fontSize: 14,
+  },
+  schedule: {
+    marginTop: spacing.md,
+    gap: spacing.xs,
+  },
+  scheduleHint: {
+    ...typography.caption,
   },
   error: {
     color: colors.errorText,

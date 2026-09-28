@@ -4,6 +4,9 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useCases } from '../../cases/hooks/useCases';
 import { useCustomerContacts, useCustomerDetail } from '../hooks/useCustomerDetail';
+import { useSessionStore } from '../../core/auth/sessionStore';
+import { CustomerReportSection } from '../../reports/components/CustomerReportSection';
+import { hasPermission } from '../../shared/utils/permissions';
 import { Avatar } from '../../shared/components/Avatar';
 import { Badge } from '../../shared/components/Badge';
 import { CenteredState } from '../../shared/components/CenteredState';
@@ -19,6 +22,9 @@ export function CustomerDetailScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const customerId = String(route.params?.customerId ?? '');
+  const permissions = useSessionStore((state) => state.user?.permissionCodes ?? []);
+  const canViewReports = hasPermission(permissions, 'REPORT_VIEW');
+  const canExport = hasPermission(permissions, 'DATA_EXPORT');
 
   const detailQuery = useCustomerDetail(customerId);
   const contactsQuery = useCustomerContacts(customerId);
@@ -92,6 +98,8 @@ export function CustomerDetailScreen() {
           ))
         )}
       </SectionCard>
+
+      {canViewReports ? <CustomerReportSection customerId={customerId} canExport={canExport} /> : null}
     </Screen>
   );
 }

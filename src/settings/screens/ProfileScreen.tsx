@@ -1,6 +1,8 @@
-import { Fingerprint, LogOut, ShieldCheck } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { BarChart2, BellRing, ChevronRight, FileText, Fingerprint, LogOut, ShieldCheck, SlidersHorizontal, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { hasPermission } from '../../shared/utils/permissions';
 import { logout } from '../../core/auth/session';
 import { useSessionStore } from '../../core/auth/sessionStore';
 import { useBiometricAvailability, useToggleBiometricPreference } from '../usecases/biometrics';
@@ -18,10 +20,24 @@ export function ProfileScreen() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const biometricQuery = useBiometricAvailability();
   const toggleBiometric = useToggleBiometricPreference();
+  const navigation = useNavigation<any>();
 
   if (!user) {
     return null;
   }
+
+  const permissions = user.permissionCodes;
+  const adminLinks: { route: string; label: string; description: string; icon: LucideIcon }[] = [
+    ...(hasPermission(permissions, 'REPORT_VIEW')
+      ? [{ route: 'Reports', label: 'Reports', description: 'Ticket volume per customer', icon: BarChart2 }]
+      : []),
+    ...(hasPermission(permissions, 'EMAIL_CONFIG_VIEW') || hasPermission(permissions, 'EMAIL_CONFIG_MANAGE')
+      ? [{ route: 'Templates', label: 'Mail templates', description: 'Reply and notification templates', icon: FileText }]
+      : []),
+    ...(hasPermission(permissions, 'INTEGRATION_CONFIG_MANAGE')
+      ? [{ route: 'Channels', label: 'Notification channels', description: 'Slack and Teams webhooks', icon: BellRing }]
+      : []),
+  ];
 
   return (
     <Screen scrollable>
@@ -47,6 +63,28 @@ export function ProfileScreen() {
           <Text style={styles.rowValue}>{user.permissionCodes.length}</Text>
         </View>
       </SectionCard>
+
+      {adminLinks.length > 0 ? (
+        <SectionCard title="Administration" icon={SlidersHorizontal}>
+          {adminLinks.map((link, index) => {
+            const Icon = link.icon;
+            return (
+              <Pressable
+                key={link.route}
+                style={({ pressed }) => [styles.linkRow, index === adminLinks.length - 1 && styles.rowLast, pressed && styles.linkPressed]}
+                onPress={() => navigation.navigate(link.route)}
+              >
+                <Icon size={18} color={colors.primary} />
+                <View style={styles.toggleText}>
+                  <Text style={styles.rowValue}>{link.label}</Text>
+                  <Text style={styles.help}>{link.description}</Text>
+                </View>
+                <ChevronRight size={18} color={colors.mutedLight} />
+              </Pressable>
+            );
+          })}
+        </SectionCard>
+      ) : null}
 
       <SectionCard title="Biometrics" subtitle="Stored as a local unlock preference only." icon={Fingerprint}>
         <View style={styles.toggleRow}>
@@ -114,6 +152,17 @@ const styles = StyleSheet.create({
   },
   rowValue: {
     ...typography.bodyStrong,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.divider,
+  },
+  linkPressed: {
+    opacity: 0.6,
   },
   toggleRow: {
     flexDirection: 'row',

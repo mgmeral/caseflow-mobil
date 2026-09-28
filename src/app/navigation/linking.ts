@@ -19,7 +19,14 @@ export const navigationLinking = {
             },
           },
           Notifications: 'notifications',
-          Profile: 'profile',
+          ProfileStack: {
+            screens: {
+              Profile: 'profile',
+              Reports: 'reports',
+              Templates: 'admin/templates',
+              Channels: 'admin/channels',
+            },
+          },
         },
       },
       Login: 'login',

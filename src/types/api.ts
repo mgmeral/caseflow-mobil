@@ -299,3 +299,145 @@ export interface GroupSummaryResponse {
   memberCount: number;
   memberIds: number[];
 }
+
+// ---------------------------------------------------------------------------
+// Admin / back-office (ALIGN-002-MOBILE-EXT). Shapes per
+// caseflow-central-brain repos/backend/frontend-contract.md.
+// ---------------------------------------------------------------------------
+
+export type ChannelType = 'SLACK' | 'TEAMS';
+export type ChannelScopeType = 'GLOBAL' | 'GROUP' | 'CUSTOMER';
+
+export interface ChannelConfigResponse {
+  id: number;
+  name: string;
+  channelType: ChannelType;
+  enabled: boolean;
+  /** Always "****" — the stored URL is never returned. */
+  webhookUrl: string;
+  /** JSON-encoded string array, not a native array — parse with parseSubscribedEvents. */
+  subscribedEvents: string | null;
+  scopeType: ChannelScopeType | null;
+  scopeId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChannelConfigRequest {
+  name: string;
+  channelType: ChannelType;
+  /** Required on create; blank on update keeps the stored URL. */
+  webhookUrl?: string;
+  subscribedEvents: string[];
+  scopeType: ChannelScopeType;
+  scopeId: number | null;
+  enabled: boolean;
+}
+
+export interface MailTemplateResponse {
+  id: number;
+  code: string;
+  name: string;
+  usageType: string | null;
+  description: string | null;
+  supportedPlaceholders: string | null;
+  customerVisible: boolean | null;
+  defaultStatusAfterSend: string | null;
+  subjectTemplate: string | null;
+  htmlTemplate: string;
+  plainTextTemplate: string;
+  isActive: boolean | null;
+  isBuiltIn: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MailTemplateRequest {
+  /** Upper-cased server-side; ignored on update. */
+  code: string;
+  name: string;
+  subjectTemplate?: string | null;
+  htmlTemplate: string;
+  plainTextTemplate: string;
+  isActive?: boolean;
+  usageType?: string | null;
+  description?: string | null;
+  customerVisible?: boolean;
+  defaultStatusAfterSend?: string | null;
+}
+
+export interface MailTemplatePreviewRequest {
+  replyBody?: string;
+  ticketRef?: string;
+  mailboxName?: string;
+  agentName?: string;
+  signatureBlock?: string;
+}
+
+export interface MailTemplatePreviewResponse {
+  subject: string | null;
+  html: string | null;
+  text: string | null;
+}
+
+export interface ScheduledEmailResponse {
+  id: number;
+  /** Numeric ticket id, even though the URL uses the publicId. */
+  ticketId: number;
+  mailboxId: number;
+  fromAddress: string | null;
+  resolvedToAddress: string | null;
+  sourceEventId: number | null;
+  subject: string;
+  status: string;
+  failureReason: string | null;
+  failureCategory: string | null;
+  sendNotBefore: string;
+  createdAt: string;
+  sentAt: string | null;
+  canceledAt: string | null;
+}
+
+export interface ScheduleEmailRequest {
+  mailboxId: number;
+  sourceEventId?: number | null;
+  toAddress?: string | null;
+  subject: string;
+  textBody: string;
+  /** ISO-8601 instant; must be in the future. */
+  sendNotBefore: string;
+  contentWasEdited?: boolean;
+}
+
+export interface ReportTagCount {
+  tagId: number;
+  tagCode: string;
+  tagName: string;
+  tagColor: string | null;
+  count: number;
+}
+
+export interface ReportStatusCounts {
+  totalCount: number;
+  openCount: number;
+  newCount: number;
+  inProgressCount: number;
+  waitingCustomerCount: number;
+  resolvedCount: number;
+  closedCount: number;
+  reopenedCount: number;
+}
+
+export interface CustomerTicketReportResponse extends ReportStatusCounts {
+  customerId: number;
+  customerName: string;
+  from: string | null;
+  to: string | null;
+  byTag: ReportTagCount[];
+}
+
+export interface AdminCustomerReportRow extends ReportStatusCounts {
+  customerId: number;
+  customerName: string;
+  customerColorHex: string | null;
+}

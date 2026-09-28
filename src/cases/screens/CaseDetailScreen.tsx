@@ -6,6 +6,8 @@ import { useCaseDetail } from '../hooks/useCaseDetail';
 import { useCaseTransitions } from '../hooks/useCaseTransitions';
 import { useConversation } from '../../conversations/hooks/useConversation';
 import { useSendReply } from '../../conversations/hooks/useSendReply';
+import { ScheduledEmailsSection } from '../../scheduledEmails/components/ScheduledEmailsSection';
+import { useScheduleEmail } from '../../scheduledEmails/hooks/useScheduledEmails';
 import { AttachmentsSection } from '../components/AttachmentsSection';
 import { HistorySection } from '../components/HistorySection';
 import { JiraSection } from '../components/JiraSection';
@@ -49,6 +51,7 @@ export function CaseDetailScreen() {
   const canManageTags = hasPermission(permissions, 'TICKET_TAG');
   const canManageJira = hasPermission(permissions, 'CUSTOMER_REPLY_SEND') || hasPermission(permissions, 'INTEGRATION_CONFIG_MANAGE');
   const canReply = hasPermission(permissions, 'TICKET_EMAIL_REPLY_SEND');
+  const canManageScheduledEmail = hasPermission(permissions, 'SCHEDULED_EMAIL_MANAGE');
 
   const [statusSheetOpen, setStatusSheetOpen] = useState(false);
   const [transferSheetOpen, setTransferSheetOpen] = useState(false);
@@ -63,6 +66,7 @@ export function CaseDetailScreen() {
   const unassignCase = useUnassignCase(caseId);
   const transferCase = useTransferCase(caseId);
   const sendReply = useSendReply(caseId);
+  const scheduleEmail = useScheduleEmail(detailQuery.data?.publicId ?? null);
 
   if (detailQuery.isLoading) {
     return <CenteredState title="Loading case detail" />;
@@ -206,6 +210,8 @@ export function CaseDetailScreen() {
         ) : null}
       </SectionCard>
 
+      {canManageScheduledEmail ? <ScheduledEmailsSection ticketPublicId={detail.publicId} /> : null}
+
       <TagsSection caseId={caseId} canManageTags={canManageTags} />
 
       <JiraSection ticketPublicId={detail.publicId} canManageJira={canManageJira} />
@@ -249,7 +255,7 @@ export function CaseDetailScreen() {
         visible={replySheetOpen}
         defaultSubject={detail.subject.startsWith('Re:') ? detail.subject : `Re: ${detail.subject}`}
         toAddress={replyToAddress}
-        isSending={sendReply.isPending}
+        isSending={sendReply.isPending || scheduleEmail.isPending}
         errorMessage={replyError}
         onSend={(subject, body) => {
           if (!lastInbound || lastInbound.mailboxId == null) {
@@ -266,6 +272,28 @@ export function CaseDetailScreen() {
             },
           );
         }}
+        onSchedule={canManageScheduledEmail && detail.publicId ? (subject, body, sendNotBefore) => {
+          if (!lastInbound || lastInbound.mailboxId == null) {
+            setReplyError('This message cannot be replied to — its mailbox reference is missing.');
+            return;
+          }
+          setReplyError(null);
+          scheduleEmail.mutate(
+            {
+              mailboxId: lastInbound.mailboxId,
+              // The backend derives the recipient and threading headers from the source event.
+              sourceEventId: lastInbound.sourceEventId ?? Number(lastInbound.id),
+              subject,
+              textBody: body,
+              sendNotBefore: sendNotBefore.toISOString(),
+              contentWasEdited: true,
+            },
+            {
+              onSuccess: () => setReplySheetOpen(false),
+              onError: (error) => setReplyError(getDisplayMessage(error)),
+            },
+          );
+        } : undefined}
         onClose={() => {
           setReplySheetOpen(false);
           setReplyError(null);

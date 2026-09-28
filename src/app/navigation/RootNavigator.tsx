@@ -11,6 +11,11 @@ import { CustomersScreen } from '../../customers/screens/CustomersScreen';
 import { CustomerDetailScreen } from '../../customers/screens/CustomerDetailScreen';
 import { NotificationsScreen } from '../../notifications/screens/NotificationsScreen';
 import { ProfileScreen } from '../../settings/screens/ProfileScreen';
+import { ReportsScreen } from '../../reports/screens/ReportsScreen';
+import { TemplatesScreen } from '../../templates/screens/TemplatesScreen';
+import { TemplateFormScreen } from '../../templates/screens/TemplateFormScreen';
+import { ChannelsScreen } from '../../channels/screens/ChannelsScreen';
+import { ChannelFormScreen } from '../../channels/screens/ChannelFormScreen';
 import { useSessionStore } from '../../core/auth/sessionStore';
 import { hasPermission } from '../../shared/utils/permissions';
 import { colors } from '../../shared/theme/colors';
@@ -19,6 +24,7 @@ const RootStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const CasesStack = createNativeStackNavigator();
 const CustomersStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
 
 const stackHeaderOptions = {
   headerStyle: { backgroundColor: colors.surface },
@@ -45,13 +51,41 @@ function CustomersNavigator() {
   );
 }
 
+// Back-office screens hang off Profile. They are registered only for users with
+// the permission, so a deep link cannot open a screen the user may not use.
+function ProfileNavigator() {
+  const permissions = useSessionStore((state) => state.user?.permissionCodes ?? []);
+  const canViewReports = hasPermission(permissions, 'REPORT_VIEW');
+  const canViewTemplates = hasPermission(permissions, 'EMAIL_CONFIG_VIEW') || hasPermission(permissions, 'EMAIL_CONFIG_MANAGE');
+  const canManageChannels = hasPermission(permissions, 'INTEGRATION_CONFIG_MANAGE');
+
+  return (
+    <ProfileStack.Navigator screenOptions={stackHeaderOptions}>
+      <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+      {canViewReports ? <ProfileStack.Screen name="Reports" component={ReportsScreen} options={{ title: 'Reports' }} /> : null}
+      {canViewTemplates ? (
+        <>
+          <ProfileStack.Screen name="Templates" component={TemplatesScreen} options={{ title: 'Mail Templates' }} />
+          <ProfileStack.Screen name="TemplateForm" component={TemplateFormScreen} options={{ title: 'Template' }} />
+        </>
+      ) : null}
+      {canManageChannels ? (
+        <>
+          <ProfileStack.Screen name="Channels" component={ChannelsScreen} options={{ title: 'Notification Channels' }} />
+          <ProfileStack.Screen name="ChannelForm" component={ChannelFormScreen} options={{ title: 'Channel' }} />
+        </>
+      ) : null}
+    </ProfileStack.Navigator>
+  );
+}
+
 const TAB_ICONS: Record<string, LucideIcon> = {
   Home: Home,
   CasesStack: Ticket,
   Inbox: InboxIcon,
   CustomersStack: Users,
   Notifications: Bell,
-  Profile: User,
+  ProfileStack: User,
 };
 
 function AppTabs() {
@@ -80,7 +114,7 @@ function AppTabs() {
       {canViewInbox ? <Tab.Screen name="Inbox" component={InboxScreen} /> : null}
       <Tab.Screen name="CustomersStack" component={CustomersNavigator} options={{ title: 'Customers' }} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="ProfileStack" component={ProfileNavigator} options={{ title: 'Profile' }} />
     </Tab.Navigator>
   );
 }
