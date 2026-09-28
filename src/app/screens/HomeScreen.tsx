@@ -73,6 +73,7 @@ export function HomeScreen() {
 
       <SectionCard
         title={actionTitle}
+        titleVariant="caps"
         action={<Text style={styles.count}>{isLoading ? '…' : data?.myActionRequired ?? items.length}</Text>}
       >
         {isLoading ? (

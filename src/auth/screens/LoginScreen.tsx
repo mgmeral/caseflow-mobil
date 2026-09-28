@@ -1,17 +1,19 @@
-import { Shield } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { login } from '../../core/auth/session';
 import { getDisplayMessage } from '../../core/api/http';
 import { Button } from '../../shared/components/Button';
 import { colors } from '../../shared/theme/colors';
-import { radii } from '../../shared/theme/radii';
-import { shadows } from '../../shared/theme/shadows';
-import { spacing } from '../../shared/theme/spacing';
-import { typography } from '../../shared/theme/typography';
 import { fonts } from '../../shared/theme/fonts';
+import { floatingSurface, inputSurface } from '../../shared/theme/inputs';
+import { spacing } from '../../shared/theme/spacing';
 
+const logo = require('../../../assets/brand/logo-full.png');
+
+// Mirrors caseflow-fe's LoginPage: a floating card on the soft blue wash, the
+// full CaseFlow logo, "Sign in to your account", and plain labelled inputs.
 export function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -36,116 +38,102 @@ export function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.container}>
-          <View style={styles.brandMark}>
-            <Shield size={30} color={colors.onPrimary} strokeWidth={2} />
-          </View>
-          <Text style={styles.brandTitle}>CaseFlow Mobile</Text>
-          <Text style={styles.brandSubtitle}>Sign in with your existing CaseFlow account.</Text>
+    <LinearGradient colors={['#F4F7FB', '#ECF2F9']} style={styles.flex}>
+      <SafeAreaView style={styles.flex}>
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.container}>
+            <View style={styles.card}>
+              <View style={styles.brand}>
+                <Image source={logo} style={styles.logo} resizeMode="contain" accessibilityLabel="CaseFlow" />
+                <Text style={styles.brandSubtitle}>Sign in to your account</Text>
+              </View>
 
-          <View style={styles.card}>
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Username</Text>
-              <TextInput
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                autoCorrect={false}
-                placeholder="jane.doe"
-                placeholderTextColor={colors.mutedLight}
-                style={styles.input}
-                testID="username-input"
-              />
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Username</Text>
+                <TextInput
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="username"
+                  placeholder="admin"
+                  placeholderTextColor={colors.mutedLight}
+                  style={styles.input}
+                  testID="username-input"
+                />
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Password</Text>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.mutedLight}
+                  secureTextEntry
+                  onSubmitEditing={handleSubmit}
+                  style={styles.input}
+                  testID="password-input"
+                />
+              </View>
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <Button label="Sign In" onPress={handleSubmit} loading={isSubmitting} />
             </View>
-
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Password</Text>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor={colors.mutedLight}
-                secureTextEntry
-                style={styles.input}
-                testID="password-input"
-              />
-            </View>
-
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-
-            <Button label="Sign In" onPress={handleSubmit} loading={isSubmitting} style={styles.submit} />
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   flex: {
     flex: 1,
   },
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  brandMark: {
-    width: 56,
-    height: 56,
-    borderRadius: radii.lg,
-    backgroundColor: colors.primary,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-    ...shadows.card,
+    padding: spacing.lg,
   },
-  brandTitle: {
-    ...typography.display,
-    fontSize: 26,
+  // `.surface-floating`, max-w-sm, p-8
+  card: {
+    ...floatingSurface,
+    width: '100%',
+    maxWidth: 384,
+    padding: spacing.xxxl,
+    gap: spacing.lg,
+  },
+  brand: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  // h-44 with -mb-8: the image has generous transparent padding.
+  logo: {
+    width: '100%',
+    height: 176,
+    marginBottom: -32,
   },
   brandSubtitle: {
-    ...typography.subtitle,
-    marginTop: spacing.xxs,
-    marginBottom: spacing.xxl,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.lg,
-    ...shadows.card,
+    ...fonts.regular,
+    fontSize: 14,
+    color: '#64748B',
   },
   field: {
-    gap: spacing.xs,
+    gap: 4,
   },
   fieldLabel: {
-    ...typography.label,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.surfaceMuted,
-    fontSize: 15,
-    color: colors.text,
-  },
-  submit: {
-    marginTop: spacing.xs,
-  },
-  error: {
-    color: colors.danger,
-    fontSize: 13,
     ...fonts.medium,
+    fontSize: 12,
+    color: '#334155',
+  },
+  input: inputSurface,
+  error: {
+    ...fonts.regular,
+    fontSize: 12,
+    color: '#DC2626',
   },
 });

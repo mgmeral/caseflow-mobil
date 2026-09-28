@@ -14,11 +14,13 @@ interface Props extends PropsWithChildren {
   icon?: LucideIcon;
   /** Rendered on the right of the header, like caseflow-fe's section-header actions. */
   action?: ReactNode;
+  /** `caps`: FE's small uppercase section heading (`text-xs font-semibold uppercase tracking-wide`). */
+  titleVariant?: 'default' | 'caps';
 }
 
 // caseflow-fe's `.section-shell` + `.section-header`: a frosted card whose header
 // carries a tinted accent strip on the left.
-export function SectionCard({ title, subtitle, icon: Icon, action, children }: Props) {
+export function SectionCard({ title, subtitle, icon: Icon, action, titleVariant = 'default', children }: Props) {
   return (
     <LinearGradient colors={gradients.card} style={styles.card}>
       <View style={styles.header}>
@@ -29,7 +31,7 @@ export function SectionCard({ title, subtitle, icon: Icon, action, children }: P
           </View>
         ) : null}
         <View style={styles.headerText}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={titleVariant === 'caps' ? styles.titleCaps : styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
         {action}
@@ -80,6 +82,13 @@ const styles = StyleSheet.create({
   title: {
     ...typography.bodyStrong,
     fontSize: 15,
+  },
+  titleCaps: {
+    ...typography.bodyStrong,
+    fontSize: 12,
+    color: '#334155',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   subtitle: {
     ...typography.caption,
