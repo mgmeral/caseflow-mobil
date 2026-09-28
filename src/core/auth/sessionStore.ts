@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import type { AuthMeResponse, TokenResponse } from '../../types/api';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -21,15 +22,19 @@ interface SessionState {
   setBiometricEnabled: (enabled: boolean) => void;
 }
 
-const storage = createJSONStorage<SessionState>(() => ({
-  getItem: async (name) => (await SecureStore.getItemAsync(name)) ?? null,
-  setItem: async (name, value) => {
-    await SecureStore.setItemAsync(name, value);
-  },
-  removeItem: async (name) => {
-    await SecureStore.deleteItemAsync(name);
-  },
-}));
+// expo-secure-store has no web implementation (every call throws), so the web
+// target keeps the session in localStorage, as caseflow-fe does.
+const storage = createJSONStorage<SessionState>(() => (Platform.OS === 'web'
+  ? window.localStorage
+  : {
+    getItem: async (name) => (await SecureStore.getItemAsync(name)) ?? null,
+    setItem: async (name, value) => {
+      await SecureStore.setItemAsync(name, value);
+    },
+    removeItem: async (name) => {
+      await SecureStore.deleteItemAsync(name);
+    },
+  }));
 
 export const useSessionStore = create<SessionState>()(
   persist(
@@ -79,8 +84,10 @@ export const useSessionStore = create<SessionState>()(
         user: state.user,
         biometricEnabled: state.biometricEnabled,
       }),
+      // On a storage error `state` is undefined; still finish hydration (as signed out)
+      // rather than leaving the app on its loading spinner forever.
       onRehydrateStorage: () => (state) => {
-        state?.finishHydration();
+        (state ?? useSessionStore.getState()).finishHydration();
       },
     },
   ),
