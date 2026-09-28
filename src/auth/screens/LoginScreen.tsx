@@ -10,6 +10,7 @@ import { radii } from '../../shared/theme/radii';
 import { shadows } from '../../shared/theme/shadows';
 import { spacing } from '../../shared/theme/spacing';
 import { typography } from '../../shared/theme/typography';
+import { fonts } from '../../shared/theme/fonts';
 
 export function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -145,6 +146,6 @@ const styles = StyleSheet.create({
   error: {
     color: colors.danger,
     fontSize: 13,
-    fontWeight: '500',
+    ...fonts.medium,
   },
 });

@@ -8,6 +8,7 @@ import { colors } from '../../shared/theme/colors';
 import { radii } from '../../shared/theme/radii';
 import { spacing } from '../../shared/theme/spacing';
 import { typography } from '../../shared/theme/typography';
+import { fonts } from '../../shared/theme/fonts';
 
 interface Props {
   caseId: string;
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
   },
   chipLabel: {
     ...typography.caption,
-    fontWeight: '700',
+    ...fonts.semibold,
     color: colors.text,
   },
   chipRemove: {
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
   addChipLabel: {
     ...typography.caption,
     color: colors.primary,
-    fontWeight: '700',
+    ...fonts.semibold,
   },
   empty: {
     ...typography.body,

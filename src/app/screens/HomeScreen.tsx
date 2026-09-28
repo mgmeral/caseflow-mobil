@@ -1,9 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
-import { AlertTriangle, Briefcase, ChevronRight, Clock, Inbox } from 'lucide-react-native';
+import { AlertTriangle, CheckCircle, CheckCircle2, Clock, Hourglass, ShieldAlert, Ticket, UserX } from 'lucide-react-native';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useDashboardStats } from '../hooks/useDashboardStats';
+import { useSessionStore } from '../../core/auth/sessionStore';
 import { CenteredState } from '../../shared/components/CenteredState';
-import { EmptyState } from '../../shared/components/EmptyState';
 import { MetricCard } from '../../shared/components/MetricCard';
 import { PriorityBadge } from '../../shared/components/PriorityBadge';
 import { Screen } from '../../shared/components/Screen';
@@ -11,73 +11,97 @@ import { SectionCard } from '../../shared/components/SectionCard';
 import { Skeleton } from '../../shared/components/Skeleton';
 import { StatusBadge } from '../../shared/components/StatusBadge';
 import { colors } from '../../shared/theme/colors';
-import { radii } from '../../shared/theme/radii';
+import { fonts } from '../../shared/theme/fonts';
 import { spacing } from '../../shared/theme/spacing';
 import { typography } from '../../shared/theme/typography';
 
+// Same filter keys caseflow-fe's DashboardPage passes to the ticket list.
+export type DashboardFilter = 'active' | 'unassigned' | 'waiting' | 'resolved' | 'closed' | 'staleOpen24h' | 'slaBreached' | 'slaAtRisk';
+
+// Mirrors caseflow-fe's DashboardPage: greeting, eight stat cards (each opening the
+// filtered ticket list) and the "My Action Required" / "Needs Attention" queue.
 export function HomeScreen() {
   const navigation = useNavigation<any>();
+  const user = useSessionStore((state) => state.user);
   const { data, isLoading, isError, isRefetching, refetch } = useDashboardStats();
 
-  if (isLoading) {
-    return (
-      <Screen scrollable>
-        <Skeleton width={180} height={28} />
-        <Skeleton width={220} height={16} style={{ marginTop: spacing.sm }} />
-        <View style={styles.metricsGrid}>
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} width="47%" height={92} radius={radii.lg} />
-          ))}
-        </View>
-        <Skeleton height={180} radius={radii.lg} />
-      </Screen>
-    );
-  }
+  // Supervisors/admins orchestrate rather than own tickets, so the backend gives
+  // them an operational queue instead of a literal "assigned to me" one.
+  const isOperationalQueue = user?.ticketScope === 'ALL' || user?.ticketScope === 'OWN_GROUPS';
+  const actionTitle = isOperationalQueue ? 'Needs Attention' : 'My Action Required';
+  const actionEmpty = isOperationalQueue
+    ? 'Nothing urgent — no unassigned or at-risk tickets right now.'
+    : 'No tickets currently require your action.';
+  const firstName = user?.fullName.split(' ')[0] ?? '';
 
-  if (isError || !data) {
+  const openTickets = (filter: DashboardFilter) =>
+    navigation.navigate('CasesStack', { screen: 'Cases', params: { dashboardFilter: filter } });
+  const openTicket = (id: number) =>
+    navigation.navigate('CasesStack', { screen: 'CaseDetail', params: { caseId: String(id) } });
+
+  if (isError && !data) {
     return <CenteredState title="Could not load dashboard" actionLabel="Retry" onAction={refetch} />;
   }
+
+  const items = data?.myActionRequiredItems ?? [];
 
   return (
     <Screen
       scrollable
+      title={`Good day, ${firstName}!`}
+      subtitle="Backend-driven operational snapshot."
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} colors={[colors.primary]} />}
     >
-      <Text style={styles.title}>CaseFlow Mobile</Text>
-      <Text style={styles.subtitle}>What needs attention right now?</Text>
+      {isLoading || !data ? (
+        <View style={styles.grid}>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <Skeleton key={index} width="47%" height={64} radius={19} />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.grid}>
+          <MetricCard label="Total" value={data.totalTickets} icon={Ticket} />
+          <MetricCard label="Active" value={data.activeTickets} icon={Clock} tone="warning" onPress={() => openTickets('active')} />
+          <MetricCard label="Unassigned" value={data.unassignedTickets} icon={UserX} tone="warning" onPress={() => openTickets('unassigned')} />
+          <MetricCard label="Open > 24h" value={data.waitingOver24h} icon={Hourglass} tone="error" onPress={() => openTickets('staleOpen24h')} />
+          <MetricCard label="Resolved" value={data.resolvedTickets} icon={CheckCircle} tone="success" onPress={() => openTickets('resolved')} />
+          <MetricCard label="Closed" value={data.closedTickets} icon={CheckCircle2} tone="neutral" onPress={() => openTickets('closed')} />
+          <MetricCard label="SLA Breached" value={data.breachedSlaCount} icon={ShieldAlert} tone="error" onPress={() => openTickets('slaBreached')} />
+          <MetricCard label="At Risk" value={data.atRiskSlaCount} icon={AlertTriangle} tone="warning" onPress={() => openTickets('slaAtRisk')} />
+        </View>
+      )}
 
-      <View style={styles.metricsGrid}>
-        <MetricCard label="My Work" value={data.myActionRequired ?? 0} icon={Briefcase} />
-        <MetricCard label="SLA Risk" value={data.atRiskSlaCount} icon={AlertTriangle} tone="warning" />
-        <MetricCard label="Unassigned" value={data.unassignedTickets} icon={Inbox} />
-        <MetricCard label="Waiting >24h" value={data.waitingOver24h} icon={Clock} tone={data.waitingOver24h > 0 ? 'error' : 'default'} />
-      </View>
-
-      <SectionCard title="Recent Cases" subtitle="Cases assigned to you that still require action.">
-        {data.myActionRequiredItems.length === 0 ? (
-          <EmptyState icon={Briefcase} title="You're all caught up" description="No cases currently require your action." />
+      <SectionCard
+        title={actionTitle}
+        action={<Text style={styles.count}>{isLoading ? '…' : data?.myActionRequired ?? items.length}</Text>}
+      >
+        {isLoading ? (
+          <Text style={styles.muted}>Loading operational queue…</Text>
+        ) : items.length === 0 ? (
+          <View style={styles.empty}>
+            <CheckCircle2 size={24} color="#86EFAC" />
+            <Text style={styles.muted}>{actionEmpty}</Text>
+          </View>
         ) : (
-          data.myActionRequiredItems.map((item, index) => (
-            <Pressable
-              key={item.id}
-              style={[styles.caseRow, index === 0 && styles.caseRowFirst]}
-              onPress={() => navigation.navigate('CasesStack', { screen: 'CaseDetail', params: { caseId: String(item.id) } })}
-            >
-              <View style={styles.caseRowText}>
-                <Text style={styles.caseTitle} numberOfLines={1}>
-                  {item.ticketNo} · {item.subject}
-                </Text>
-                <Text style={styles.caseMeta} numberOfLines={1}>
-                  {item.customerName}
-                </Text>
-                <View style={styles.badgeRow}>
-                  <PriorityBadge priority={item.priority} />
-                  <StatusBadge status={item.status} />
+          <>
+            {items.slice(0, 5).map((item, index) => (
+              <Pressable
+                key={item.id}
+                style={({ pressed }) => [styles.row, index === 0 && styles.rowFirst, pressed && styles.rowPressed]}
+                onPress={() => openTicket(item.id)}
+              >
+                <View style={styles.rowText}>
+                  <Text style={styles.subject} numberOfLines={1}>{item.subject}</Text>
+                  <Text style={styles.meta} numberOfLines={1}>{item.ticketNo} · {item.customerName}</Text>
                 </View>
-              </View>
-              <ChevronRight size={18} color={colors.mutedLight} />
+                <PriorityBadge priority={item.priority} />
+                <StatusBadge status={item.status} />
+              </Pressable>
+            ))}
+            <Pressable onPress={() => navigation.navigate('CasesStack', { screen: 'Cases' })} style={styles.viewAll}>
+              <Text style={styles.viewAllText}>View all tickets →</Text>
             </Pressable>
-          ))
+          </>
         )}
       </SectionCard>
     </Screen>
@@ -85,45 +109,61 @@ export function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    ...typography.display,
-    marginBottom: spacing.xxs,
-  },
-  subtitle: {
-    ...typography.subtitle,
-    marginBottom: spacing.lg,
-  },
-  metricsGrid: {
+  grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
-    marginBottom: spacing.lg,
   },
-  caseRow: {
+  count: {
+    ...typography.caption,
+    color: colors.mutedLight,
+  },
+  muted: {
+    ...typography.caption,
+    color: colors.mutedLight,
+    textAlign: 'center',
+  },
+  empty: {
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: spacing.lg,
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
     paddingVertical: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.divider,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.5)',
   },
-  caseRowFirst: {
+  rowFirst: {
     borderTopWidth: 0,
     paddingTop: 0,
   },
-  caseRowText: {
+  rowPressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.74)',
+  },
+  rowText: {
     flex: 1,
-    gap: spacing.xxs,
+    minWidth: 0,
   },
-  caseTitle: {
-    ...typography.bodyStrong,
+  subject: {
+    ...fonts.medium,
+    fontSize: 14,
+    color: '#1E293B',
   },
-  caseMeta: {
-    ...typography.caption,
+  meta: {
+    ...fonts.regular,
+    fontSize: 11,
+    color: colors.mutedLight,
+    marginTop: 2,
   },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
+  viewAll: {
+    paddingTop: spacing.sm,
+  },
+  viewAllText: {
+    ...fonts.medium,
+    fontSize: 12,
+    color: '#4F46E5',
   },
 });

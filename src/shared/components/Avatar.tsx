@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { fonts } from '../theme/fonts';
 
 const PALETTE = ['#2563EB', '#059669', '#7C3AED', '#DB2777', '#EA580C', '#0891B2'];
 
@@ -43,6 +44,6 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    ...fonts.semibold,
   },
 });

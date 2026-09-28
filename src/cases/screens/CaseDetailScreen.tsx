@@ -34,6 +34,7 @@ import { typography } from '../../shared/theme/typography';
 import { useAssignCase, useChangeCaseStatus, useTransferCase, useUnassignCase } from '../../workflow/hooks/useTicketWorkflow';
 import { useSessionStore } from '../../core/auth/sessionStore';
 import { hasPermission } from '../../shared/utils/permissions';
+import { fonts } from '../../shared/theme/fonts';
 
 export function CaseDetailScreen() {
   const route = useRoute<any>();
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
   },
   messageTitle: {
     color: colors.text,
-    fontWeight: '600',
+    ...fonts.semibold,
   },
   timestamp: {
     color: colors.muted,

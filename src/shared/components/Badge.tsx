@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { fonts } from '../theme/fonts';
 import { badgeVariantStyles, type BadgeVariant } from '../theme/status';
 
 interface Props {
@@ -19,13 +20,13 @@ export function Badge({ label, variant = 'default', size = 'sm', style }: Props)
         {
           backgroundColor: palette.bg,
           borderColor: palette.border,
-          paddingHorizontal: isSmall ? 8 : 10,
-          paddingVertical: isSmall ? 3 : 5,
+          paddingHorizontal: isSmall ? 10 : 12,
+          paddingVertical: isSmall ? 4 : 6,
         },
         style,
       ]}
     >
-      <Text style={[styles.text, { color: palette.text, fontSize: isSmall ? 11 : 12 }]} numberOfLines={1}>
+      <Text style={[styles.text, { color: palette.text, fontSize: isSmall ? 11 : 14 }]} numberOfLines={1}>
         {label}
       </Text>
     </View>
@@ -38,8 +39,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: 'flex-start',
   },
+  // caseflow-fe Badge: rounded-full, font-semibold, tracking 0.01em.
   text: {
-    fontWeight: '700',
-    letterSpacing: 0.2,
+    ...fonts.semibold,
+    letterSpacing: 0.1,
   },
 });

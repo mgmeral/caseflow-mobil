@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Bell, Home, Inbox as InboxIcon, Ticket, User, Users } from 'lucide-react-native';
+import { Bell, Home, Inbox as InboxIcon, LayoutDashboard, Ticket, User, Users } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { LoginScreen } from '../../auth/screens/LoginScreen';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -19,6 +19,7 @@ import { ChannelFormScreen } from '../../channels/screens/ChannelFormScreen';
 import { useSessionStore } from '../../core/auth/sessionStore';
 import { hasPermission } from '../../shared/utils/permissions';
 import { colors } from '../../shared/theme/colors';
+import { fonts } from '../../shared/theme/fonts';
 
 const RootStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -26,18 +27,19 @@ const CasesStack = createNativeStackNavigator();
 const CustomersStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
 
+// Stack headers play the role of caseflow-fe's light topbar.
 const stackHeaderOptions = {
-  headerStyle: { backgroundColor: colors.surface },
+  headerStyle: { backgroundColor: 'rgba(248, 251, 255, 0.98)' },
   headerTintColor: colors.text,
-  headerTitleStyle: { fontWeight: '700' as const },
+  headerTitleStyle: { ...fonts.semibold, fontSize: 17 },
   headerShadowVisible: false,
 };
 
 function CasesNavigator() {
   return (
     <CasesStack.Navigator screenOptions={stackHeaderOptions}>
-      <CasesStack.Screen name="Cases" component={CasesScreen} options={{ title: 'Cases' }} />
-      <CasesStack.Screen name="CaseDetail" component={CaseDetailScreen} options={{ title: 'Case Detail' }} />
+      <CasesStack.Screen name="Cases" component={CasesScreen} options={{ title: 'Tickets' }} />
+      <CasesStack.Screen name="CaseDetail" component={CaseDetailScreen} options={{ title: 'Ticket' }} />
     </CasesStack.Navigator>
   );
 }
@@ -80,7 +82,7 @@ function ProfileNavigator() {
 }
 
 const TAB_ICONS: Record<string, LucideIcon> = {
-  Home: Home,
+  Home: LayoutDashboard,
   CasesStack: Ticket,
   Inbox: InboxIcon,
   CustomersStack: Users,
@@ -96,22 +98,26 @@ function AppTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedLight,
+        // caseflow-fe's navigation is a dark navy sidebar (#0b1730 → #10213f); the
+        // tab bar is its mobile counterpart, so it uses the same surface.
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: 'rgba(191, 219, 254, 0.62)',
+        tabBarActiveBackgroundColor: 'rgba(255, 255, 255, 0.06)',
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          backgroundColor: '#0D1C36',
+          borderTopColor: 'rgba(255, 255, 255, 0.08)',
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' as const },
+        tabBarLabelStyle: { fontSize: 11, ...fonts.semibold },
         tabBarIcon: ({ color, size }: { color: string; size: number }) => {
           const Icon = TAB_ICONS[route.name] ?? Home;
           return <Icon color={color} size={size - 2} strokeWidth={2.25} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="CasesStack" component={CasesNavigator} options={{ title: 'Cases' }} />
-      {canViewInbox ? <Tab.Screen name="Inbox" component={InboxScreen} /> : null}
+      {/* Labels use caseflow-fe's sidebar terms; route names stay stable for deep links. */}
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Dashboard' }} />
+      <Tab.Screen name="CasesStack" component={CasesNavigator} options={{ title: 'Tickets' }} />
+      {canViewInbox ? <Tab.Screen name="Inbox" component={InboxScreen} options={{ title: 'Queue' }} /> : null}
       <Tab.Screen name="CustomersStack" component={CustomersNavigator} options={{ title: 'Customers' }} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
       <Tab.Screen name="ProfileStack" component={ProfileNavigator} options={{ title: 'Profile' }} />

@@ -3,6 +3,7 @@ import { colors } from '../theme/colors';
 import { radii } from '../theme/radii';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
+import { fonts } from '../theme/fonts';
 
 export interface ChipOption<T extends string> {
   value: T;
@@ -84,6 +85,6 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: {
     color: colors.primaryDark,
-    fontWeight: '700',
+    ...fonts.semibold,
   },
 });

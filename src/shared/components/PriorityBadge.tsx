@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { getPriorityConfig } from '../theme/status';
+import { fonts } from '../theme/fonts';
 
 interface Props {
   priority?: string | null;
@@ -36,7 +37,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   text: {
-    fontWeight: '700',
+    ...fonts.semibold,
     letterSpacing: 0.2,
   },
 });

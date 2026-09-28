@@ -2,6 +2,7 @@ import { AlertCircle } from 'lucide-react-native';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Button } from './Button';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/fonts';
 
 interface Props {
   title: string;
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text,
     fontSize: 15,
-    fontWeight: '500',
+    ...fonts.medium,
     textAlign: 'center',
   },
   action: {

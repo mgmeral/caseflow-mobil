@@ -16,6 +16,7 @@ import { radii } from '../../shared/theme/radii';
 import { shadows } from '../../shared/theme/shadows';
 import { spacing } from '../../shared/theme/spacing';
 import { typography } from '../../shared/theme/typography';
+import { fonts } from '../../shared/theme/fonts';
 
 type CasesFilter = 'all' | 'mine';
 
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     ...typography.caption,
-    fontWeight: '600',
+    ...fonts.semibold,
   },
   filterLabelActive: {
     color: colors.primary,
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
   },
   subject: {
     ...typography.body,
-    fontWeight: '600',
+    ...fonts.semibold,
   },
   meta: {
     ...typography.caption,

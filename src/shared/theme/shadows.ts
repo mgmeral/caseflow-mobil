@@ -1,37 +1,9 @@
-import { Platform } from 'react-native';
-import { colors } from './colors';
+import type { ViewStyle } from 'react-native';
 
-// Android has no shadow* props — `elevation` is the closest analog, so each
-// level pairs an iOS shadow with a roughly-matching Android elevation.
+// caseflow-fe's blue-tinted shadow scale (tailwind.config.js boxShadow), via the
+// cross-platform `boxShadow` style prop (React Native new architecture).
 export const shadows = {
-  soft: Platform.select({
-    ios: {
-      shadowColor: colors.shadowColor,
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 2 },
-    },
-    android: { elevation: 1 },
-    default: {},
-  }),
-  card: Platform.select({
-    ios: {
-      shadowColor: colors.shadowColor,
-      shadowOpacity: 0.08,
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: 6 },
-    },
-    android: { elevation: 3 },
-    default: {},
-  }),
-  elevated: Platform.select({
-    ios: {
-      shadowColor: colors.shadowColor,
-      shadowOpacity: 0.16,
-      shadowRadius: 24,
-      shadowOffset: { width: 0, height: 12 },
-    },
-    android: { elevation: 8 },
-    default: {},
-  }),
-};
+  soft: { boxShadow: '0 10px 24px -18px rgba(15,23,42,0.24), 0 8px 16px -16px rgba(37,99,235,0.18)' },
+  card: { boxShadow: '0 18px 36px -26px rgba(15,23,42,0.26), 0 10px 22px -18px rgba(37,99,235,0.16)' },
+  elevated: { boxShadow: '0 28px 72px -34px rgba(15,23,42,0.42), 0 22px 48px -34px rgba(37,99,235,0.24)' },
+} satisfies Record<string, ViewStyle>;
