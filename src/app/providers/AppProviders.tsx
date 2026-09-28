@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { queryClient } from '../../core/api/queryClient';
 import { navigationLinking } from '../navigation/linking';
+import { ToastHost } from '../../shared/components/Toast';
 import { colors } from '../../shared/theme/colors';
 
 const navigationTheme = {
@@ -26,6 +27,7 @@ export function AppProviders({ children }: PropsWithChildren) {
         <NavigationContainer linking={navigationLinking as any} theme={navigationTheme}>
           {children}
         </NavigationContainer>
+        <ToastHost />
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

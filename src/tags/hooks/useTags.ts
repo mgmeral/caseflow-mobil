@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { addTagToTicket, getActiveTags, getTicketTags, removeTagFromTicket } from '../api/tagsApi';
+import { addTagToTicket, getActiveTags, getAllTags, getTicketTags, removeTagFromTicket } from '../api/tagsApi';
 
 export function useActiveTags(enabled = true) {
   return useQuery({
@@ -31,5 +31,15 @@ export function useRemoveTicketTag(ticketId: string) {
   return useMutation({
     mutationFn: (tagId: number) => removeTagFromTicket(ticketId, tagId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ticket-tags', ticketId] }),
+  });
+}
+
+/** Active and inactive tags, as caseflow-fe's ticket filter lists them; needs ADMIN_CONFIG. */
+export function useAllTags(enabled = true) {
+  return useQuery({
+    queryKey: ['tags-all'],
+    queryFn: getAllTags,
+    enabled,
+    staleTime: 15_000,
   });
 }

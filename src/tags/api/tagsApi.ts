@@ -16,3 +16,8 @@ export async function addTagToTicket(ticketId: string, tagId: number) {
 export async function removeTagFromTicket(ticketId: string, tagId: number) {
   return apiClient.delete<void>(`/tickets/${ticketId}/tags/${tagId}`);
 }
+
+/** Includes inactive tags; needs ADMIN_CONFIG. */
+export async function getAllTags() {
+  return apiClient.get<TagResponse[]>('/tags/all');
+}

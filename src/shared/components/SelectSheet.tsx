@@ -1,6 +1,8 @@
 import { Check, X } from 'lucide-react-native';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme/colors';
+import { inputSurface } from '../theme/inputs';
 import { radii } from '../theme/radii';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -19,9 +21,18 @@ interface Props {
   onSelect: (value: string) => void;
   onClose: () => void;
   emptyLabel?: string;
+  /** Shows a search box that filters options by label. */
+  searchPlaceholder?: string;
 }
 
-export function SelectSheet({ visible, title, options, selectedValue, onSelect, onClose, emptyLabel }: Props) {
+export function SelectSheet({ visible, title, options, selectedValue, onSelect, onClose, emptyLabel, searchPlaceholder }: Props) {
+  const [query, setQuery] = useState('');
+  useEffect(() => {
+    if (visible) setQuery('');
+  }, [visible]);
+  const needle = query.trim().toLowerCase();
+  const shown = needle ? options.filter((option) => option.label.toLowerCase().includes(needle)) : options;
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -32,11 +43,24 @@ export function SelectSheet({ visible, title, options, selectedValue, onSelect, 
               <X size={20} color={colors.muted} />
             </Pressable>
           </View>
-          <ScrollView style={styles.list} bounces={false}>
-            {options.length === 0 ? (
-              <Text style={styles.empty}>{emptyLabel ?? 'No options available.'}</Text>
+          {searchPlaceholder ? (
+            <View style={styles.search}>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={searchPlaceholder}
+                placeholderTextColor={colors.mutedLight}
+                autoCorrect={false}
+                autoCapitalize="none"
+                style={inputSurface}
+              />
+            </View>
+          ) : null}
+          <ScrollView style={styles.list} bounces={false} keyboardShouldPersistTaps="handled">
+            {shown.length === 0 ? (
+              <Text style={styles.empty}>{needle ? 'No matches.' : emptyLabel ?? 'No options available.'}</Text>
             ) : (
-              options.map((option) => {
+              shown.map((option) => {
                 const isSelected = option.value === selectedValue;
                 return (
                   <Pressable
@@ -84,6 +108,10 @@ const styles = StyleSheet.create({
   title: {
     ...typography.title,
     fontSize: 17,
+  },
+  search: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
   list: {
     paddingHorizontal: spacing.sm,

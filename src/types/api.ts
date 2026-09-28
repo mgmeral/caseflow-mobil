@@ -441,3 +441,14 @@ export interface AdminCustomerReportRow extends ReportStatusCounts {
   customerName: string;
   customerColorHex: string | null;
 }
+
+// GET /api/users item (UserController.listUsers).
+export interface UserSummaryResponse {
+  id: number;
+  username: string;
+  fullName: string;
+  roleId: number | null;
+  roleCode: string | null;
+  isActive: boolean;
+  openTicketCount: number;
+}

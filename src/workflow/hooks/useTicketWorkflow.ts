@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { changeCaseStatus } from '../../cases/api/casesApi';
-import { assignTicket, unassignTicket } from '../api/assignmentApi';
+import { assignOrReassignTicket, unassignTicket } from '../api/assignmentApi';
 import { transferTicket, type TransferTicketInput } from '../api/transferApi';
 
 function useInvalidateTicketQueries(caseId: string) {
@@ -26,7 +26,7 @@ export function useChangeCaseStatus(caseId: string) {
 export function useAssignCase(caseId: string) {
   const invalidate = useInvalidateTicketQueries(caseId);
   return useMutation({
-    mutationFn: (assignedUserId: number) => assignTicket(caseId, assignedUserId),
+    mutationFn: (assignedUserId: number) => assignOrReassignTicket(caseId, assignedUserId),
     onSuccess: invalidate,
   });
 }
